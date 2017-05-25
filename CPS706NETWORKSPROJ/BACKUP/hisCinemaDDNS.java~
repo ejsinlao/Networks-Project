@@ -1,0 +1,44 @@
+import java.io.*;
+import java.util.*;
+import java.net.*;
+
+class hisCinemaDDNS {
+  public static final int portNum = 40501;
+  private static int count = 0;
+  
+  public static void main(String argv[]) throws IOException {
+    System.out.println("Starting hisCinema.com...");
+    byte[] receiveData = new byte[1024];
+    byte[] sendData = new byte[1024];
+    System.out.println("My IP is : " + InetAddress.getLocalHost().getHostAddress() + ":" + portNum);
+    
+    DatagramSocket hisCinemaDDNS = new DatagramSocket(portNum);
+    System.out.println("Waiting for Client request...");
+    
+    while(true) {
+      
+      DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+      hisCinemaDDNS.receive(receivePacket);
+      InetAddress IPAddress = receivePacket.getAddress();
+      int port = receivePacket.getPort();
+      int length = receivePacket.getLength();
+      
+      String request = new String(receiveData, 0, length);
+      
+      System.out.println("Received data from: "
+                           + IPAddress.toString() + ":" + port
+                           + " with length: " + length + " asking for: " + request);
+      
+      String recordReturn = "NOT FOUND";
+      
+        if (count == 0)
+        {
+          sendData = recordReturn.getBytes();
+          DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+          hisCinemaDDNS.send(sendPacket);
+          System.out.println("Sent : " + recordReturn);
+          count++;
+        }
+    }
+  }
+}

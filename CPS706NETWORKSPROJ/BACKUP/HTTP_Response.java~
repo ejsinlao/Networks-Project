@@ -1,0 +1,38 @@
+public class HTTP_Response
+{
+	private double version;
+	private int statusCode;
+	private String phrase;
+
+	private String connection;
+	private String date;
+	private String server;
+	private String lastModified;
+	private String contentLength;
+	private String contentType;
+
+	private String data;
+
+	public HTTP_Response(int statusCode)
+	{
+		this.version = 1.1;
+		if (statusCode == 200) phrase = "OK";
+		else if (statusCode == 301) phrase = "Moved Permanently";
+		else if (statusCode == 302) phrase = "Found";
+		else if (statusCode == 304) phrase = "Not Modified";
+		else if (statusCode == 400) phrase = "Bad Request";
+		else if (statusCode == 401) phrase = "Unauthorized";
+		else if (statusCode == 404) phrase = "OK";
+		else if (statusCode == 505) phrase == "HTTP Version Not Supported";
+ 	}
+
+	public void setData(String data)
+	{
+		this.data = data;
+	}
+
+	public int getStatusCode()
+	{
+		return this.statusCode;
+	}
+}

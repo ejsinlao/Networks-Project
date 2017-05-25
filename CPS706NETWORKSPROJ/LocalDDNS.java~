@@ -1,0 +1,113 @@
+import java.io.*;
+import java.util.*;
+import java.net.*;
+
+class LocalDDNS {
+  public static final int portNum = 40500;
+  public static final int RECORDS = 4;
+  
+  public final static int HisCinemaAuth_Port = hisCinemaDDNS.portNum;
+  public final static String HisCinemaAuth_IP = "localhost";
+  
+  private static int count = 0;
+  
+  public static void main(String argv[]) throws IOException, ClassNotFoundException {
+  InputStream inStream = null;
+    OutputStream outStream = null;
+    ServerSocket client = null;
+    Socket clientSocket = null;
+    
+    System.out.println("Starting localDDNS...");
+    System.out.println("Loading records...");
+    DNS_Record[] records = new DNS_Record[10];
+    //Assume local DDNS has the following records :
+    records[0] = new DNS_Record("herCDN.com", "NSherCDN.com", "NS");
+    records[1] = new DNS_Record("NSherCDN.com", "IPher", "A");
+    records[2] = new DNS_Record("hiscinema.com", "NShiscinema.com", "NS");
+    records[3] = new DNS_Record("NShiscinema.com", "IPhis", "A");
+    System.out.println("Records Loaded.");
+    
+    byte[] receiveData = new byte[1024];
+    byte[] sendData = new byte[1024];
+    System.out.println("My IP is : " + InetAddress.getLocalHost().getHostAddress()+ ":" + portNum);
+    DatagramSocket ddnsSocket = new DatagramSocket(portNum);
+    System.out.println("Waiting for Client request...");
+    client = new ServerSocket(portNum);
+    clientSocket = client.accept();
+  inStream = clientSocket.getInputStream();
+    
+    while(true) {
+      
+      DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+      ddnsSocket.receive(receivePacket);
+      byte[] data = receivePacket.getData();
+      ByteArrayInputStream in = new ByteArrayInputStream(data);
+      ObjectInputStream is = new ObjectInputStream(in);
+      try {
+        DNS_Message fileRequest = (DNS_Message) is.readObject();
+        if (fileRequest.getQuestion() != null) {
+          System.out.println("Resolving request for " + fileRequest.getQuestion().getValue());
+        }
+      }
+        catch (ClassNotFoundException e) {
+          e.printStackTrace();
+        }
+      InetAddress IPAddress = receivePacket.getAddress();
+      int port = receivePacket.getPort();
+      int length = receivePacket.getLength();
+      String reply = "Received DNS Message";
+      byte[] replyBytes = reply.getBytes();
+      DatagramPacket replyPacket = new DatagramPacket(replyBytes, replyBytes.length, IPAddress, port);
+      ddnsSocket.send(replyPacket);
+
+
+      /*try{
+        ObjectInputStream ois = new ObjectInputStream(inStream);
+        DNS_Message fileRequest = (DNS_Message) ois.readObject();
+        if (fileRequest.questions != null) {
+          System.out.println("Received file request");
+        }
+      } catch (IOException e) {
+          System.out.println(e);
+      }
+      
+      //LocalDNS, this, receive request from client and forward to another server : hisCinema.com DDNS
+      //DDNS reply/requests are with a DNS message (TextBook Pg.141 - 2.5)
+      //How da frik will we implement the DNS messages...hmm. array?
+      
+      InetAddress IPAddress;
+      int port = receivePacket.getPort();
+      int length = receivePacket.getLength();
+      
+      String request = new String(receiveData, 0, length);
+      
+      System.out.println("Received data from: "
+                           + receivePacket.getAddress().toString() + ":" + port
+                           + " with length: " + length + " asking for: " + request);
+      
+      String recordReturn = "RECORD NOT FOUND";
+      //send back dns message here
+      for(int x = 0; x < RECORDS; x++) {
+        if(records[x].getName().equalsIgnoreCase(request)) {
+          recordReturn = records[x].getValue();
+        }
+      }
+      
+      if (count == 0)
+      {
+        sendData = recordReturn.getBytes();
+        //set send IP as hisCinema.com to forward
+        IPAddress = InetAddress.getByName(HisCinemaAuth_IP);
+        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, HisCinemaAuth_Port);
+        ddnsSocket.send(sendPacket);
+        System.out.println("Sent to HisCinemaAuth_DDNS : " + recordReturn);
+
+        //set send IP as Client to send
+        IPAddress = receivePacket.getAddress();
+        sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
+        ddnsSocket.send(sendPacket);
+        System.out.println("Sent to Client : " + recordReturn);
+        count++;*/
+    }
+  }
+}

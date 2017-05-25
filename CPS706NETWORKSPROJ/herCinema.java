@@ -1,0 +1,130 @@
+import java.io.*;
+import java.util.*;
+import java.net.*;
+
+class herCinema {
+  public final static String videoFile0 = "herCDN0.txt";
+  public final static String videoFile1 = "herCDN1.txt";
+  public final static String videoFile2 = "herCDN2.txt";
+  public final static String videoFile3 = "herCDN3.txt";
+  public final static String videoFile4 = "herCDN4.txt";
+  public final static String videoFile5 = "herCDN5.txt";
+  public final static String IP = "localhost";
+  //actual video
+  public final static String video="Dove.mp4";
+  
+  
+  public final static int portNum = 40504;
+  
+  public static void main(String args[]) throws IOException, ClassNotFoundException {
+    
+    while (true) {
+      System.out.println("Starting herCinema.com...");
+      //dont worry about this
+      System.out.println("My IP is : " + InetAddress.getLocalHost().getHostAddress() + ":" + portNum);
+      ServerSocket herCinema = null;
+      Socket connectionSocket = null;
+      BufferedOutputStream outToClient = null;
+      InputStream inStream = null;
+      OutputStream outStream = null;
+      
+      int statusCode = 0;
+      
+      String videoURL= "";
+      
+      System.out.println("Waiting for Client request...");
+      herCinema = new ServerSocket(portNum);
+    
+      while(true) {
+        try {
+          connectionSocket = herCinema.accept();
+          inStream = connectionSocket.getInputStream(); 
+          outToClient = new BufferedOutputStream(connectionSocket.getOutputStream());
+        } catch (IOException ex) {
+          System.out.println(ex);
+        }
+        try{
+          ObjectInputStream ois = new ObjectInputStream(inStream);
+          HTTP_Request request = (HTTP_Request) ois.readObject();
+          //check which URL was picked
+          /*
+       if(request.getURL() == "http://video.hiscinema.com/F0"){
+          videoURL=videoFile0; 
+        }
+       else if(request.getURL() == "http://video.hiscinema.com/F1"){
+          videoURL=videoFile1; 
+        }
+        else if(request.getURL() == "http://video.hiscinema.com/F2"){
+          videoURL=videoFile2; 
+        }
+        else if(request.getURL() == "http://video.hiscinema.com/F3"){
+          videoURL=videoFile3; 
+        }
+       else  if(request.getURL() == "http://video.hiscinema.com/F4"){
+          videoURL=videoFile4; 
+        }
+       else  if(request.getURL() == "http://video.hiscinema.com/F5"){
+          videoURL=videoFile5; 
+        }
+       */
+          if (request.getVersion() != 1.1) {
+            statusCode = 505;
+          }
+          if (request != null) {
+            if (request.getMethod().equals("GET")) {
+              System.out.println("Obtained GET request from client for : " + request.getURL());
+              if(!request.getURL().equalsIgnoreCase(video))
+                statusCode = 404;
+              else
+                statusCode = 200;
+            }
+            else
+              statusCode = 400;
+          }
+        } catch (IOException e) {
+          System.out.println(e);
+        }
+       
+        outStream = connectionSocket.getOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(outStream);
+        HTTP_Response response = new HTTP_Response(1.1, statusCode);
+        oos.writeObject(response);
+        System.out.println("Sending HTTP response to GET request...");
+        
+        //if get is good n stuff, send file
+        // 
+        
+        if(statusCode == 200) {
+          InetAddress IPAddress = connectionSocket.getInetAddress();
+          int port = connectionSocket.getPort();
+         
+          if (outToClient != null) {
+            
+            File myFile = new File(video);
+            byte[] mybytearray = new byte[(int) myFile.length()];
+            
+            FileInputStream fis = null;
+            
+            try {
+              fis = new FileInputStream(myFile);
+            } catch (FileNotFoundException ex) {
+              System.out.println(ex);
+            }
+            BufferedInputStream bis = new BufferedInputStream(fis);
+            
+            try {
+              bis.read(mybytearray, 0, mybytearray.length);
+              outToClient.write(mybytearray, 0, mybytearray.length);
+              outToClient.flush();
+              outToClient.close();
+              
+              System.out.println(video + "was sent");
+            } catch (IOException ex) {
+              System.out.println(ex);
+            }
+          }
+        }
+      }
+    }
+  }
+}
